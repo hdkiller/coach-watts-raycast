@@ -88,33 +88,43 @@ export class CoachWattsApi {
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
 
+    const responseText = await response.text().catch(() => "");
+
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
       let errorMessage = `Server error ${response.status}: ${response.statusText}`;
       try {
-        const parsed = JSON.parse(errorText);
+        const parsed = JSON.parse(responseText);
         if (parsed.message) errorMessage = parsed.message;
         if (parsed.statusMessage) errorMessage = parsed.statusMessage;
         if (parsed.error_description) errorMessage = parsed.error_description;
       } catch {
-        if (errorText) errorMessage = errorText;
+        if (responseText) errorMessage = responseText;
       }
       throw new Error(errorMessage);
     }
 
-    return (await response.json()) as T;
+    if (
+      !responseText ||
+      responseText.trim().length === 0 ||
+      responseText.trim() === "null"
+    ) {
+      return null as unknown as T;
+    }
+
+    return JSON.parse(responseText) as T;
   }
 
-  public static async getTodayRecommendation(): Promise<RecommendationResponse> {
-    return this.request<RecommendationResponse>("/api/recommendations/today");
+  public static async getTodayRecommendation(): Promise<RecommendationResponse | null> {
+    return this.request<RecommendationResponse | null>("/api/recommendations/today");
   }
 
   public static async getRecentWorkouts(limit = 30): Promise<Workout[]> {
-    const res = await this.request<Workout[] | { workouts: Workout[] }>(
+    const res = await this.request<Workout[] | { workouts: Workout[] } | null>(
       `/api/workouts?limit=${limit}`,
     );
+    if (!res) return [];
     if (Array.isArray(res)) return res;
-    if (res && Array.isArray(res.workouts)) return res.workouts;
+    if ("workouts" in res && Array.isArray(res.workouts)) return res.workouts;
     return [];
   }
 
@@ -122,10 +132,11 @@ export class CoachWattsApi {
     limit = 14,
   ): Promise<WellnessRecord[]> {
     const res = await this.request<
-      WellnessRecord[] | { wellness: WellnessRecord[] }
+      WellnessRecord[] | { wellness: WellnessRecord[] } | null
     >(`/api/wellness?limit=${limit}`);
+    if (!res) return [];
     if (Array.isArray(res)) return res;
-    if (res && Array.isArray(res.wellness)) return res.wellness;
+    if ("wellness" in res && Array.isArray(res.wellness)) return res.wellness;
     return [];
   }
 
@@ -135,10 +146,10 @@ export class CoachWattsApi {
       body: { message: prompt },
     });
     return (
-      res.response ||
-      res.reply ||
-      res.text ||
-      res.message ||
+      res?.response ||
+      res?.reply ||
+      res?.text ||
+      res?.message ||
       "No response text returned from AI Coach."
     );
   }

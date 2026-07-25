@@ -36,6 +36,34 @@ Please make sure Coach Watts server is running and your API Key / Base URL setti
     );
   }
 
+  if (!isLoading && !data) {
+    const noRecMarkdown = `
+# 🚴 Today's Training Recommendation
+
+No recommendation has been generated for today yet.
+
+---
+
+### 💡 **Next Steps**
+- Open **Coach Watts Dashboard** to trigger recommendation generation.
+- Or click **Refresh** below to check for updates.
+`;
+    return (
+      <Detail
+        markdown={noRecMarkdown}
+        actions={
+          <ActionPanel>
+            <Action title="Refresh" icon={Icon.Redo} onAction={revalidate} />
+            <Action.OpenInBrowser
+              title="Open Coach Watts Dashboard"
+              url={getWebUrl()}
+            />
+          </ActionPanel>
+        }
+      />
+    );
+  }
+
   const rec = data?.recommendation || data;
   const summary =
     rec?.summary ||
