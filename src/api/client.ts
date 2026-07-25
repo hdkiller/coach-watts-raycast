@@ -60,11 +60,12 @@ export interface WellnessRecord {
   notes?: string;
 }
 
-export interface ChatResponse {
-  message?: string;
-  response?: string;
-  reply?: string;
-  text?: string;
+export interface ChatMessage {
+  id?: string;
+  role: string;
+  content?: string;
+  parts?: Array<{ type: string; text?: string }>;
+  metadata?: { turnStatus?: string };
 }
 
 export class CoachWattsApi {
@@ -141,17 +142,55 @@ export class CoachWattsApi {
   }
 
   public static async askCoach(prompt: string): Promise<string> {
-    const res = await this.request<ChatResponse>("/api/chat/messages", {
+    // 1. Create chat room
+    const roomRes = await this.request<{ roomId: string }>("/api/chat/rooms", {
       method: "POST",
-      body: { message: prompt },
     });
-    return (
-      res?.response ||
-      res?.reply ||
-      res?.text ||
-      res?.message ||
-      "No response text returned from AI Coach."
-    );
+    const roomId = roomRes.roomId;
+
+    // 2. Post user message to chat room
+    await this.request<unknown>("/api/chat/messages", {
+      method: "POST",
+      body: {
+        roomId,
+        messages: [{ role: "user", content: prompt }],
+      },
+    });
+
+    // 3. Poll for completed AI response (up to 20 seconds)
+    const maxAttempts = 20;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const messages = await this.request<ChatMessage[]>(
+        `/api/chat/messages?roomId=${roomId}`,
+      );
+
+      if (Array.isArray(messages)) {
+        const assistantMsg = [...messages]
+          .reverse()
+          .find((m) => m.role === "assistant");
+
+        if (assistantMsg) {
+          const textContent =
+            assistantMsg.content && assistantMsg.content.trim().length > 0
+              ? assistantMsg.content
+              : assistantMsg.parts
+                  ?.filter((p) => p.type === "text" && p.text)
+                  .map((p) => p.text)
+                  .join("") || "";
+
+          if (
+            textContent.trim().length > 0 &&
+            assistantMsg.metadata?.turnStatus === "COMPLETED"
+          ) {
+            return textContent.trim();
+          }
+        }
+      }
+    }
+
+    throw new Error("Timeout waiting for Coach Watts AI response.");
   }
 
   public static async triggerSync(): Promise<{
