@@ -1,0 +1,37 @@
+name: CI & E2E Validation
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test:
+    name: Typecheck, Build & E2E Integration Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript typecheck
+        run: npm run typecheck
+
+      - name: Build extension bundle
+        run: npm run build
+
+      - name: Run Vitest E2E Integration Tests
+        run: npm test
+        env:
+          TEST_BASE_URL: https://coachwatts.com
+          TEST_API_KEY: ${{ secrets.TEST_API_KEY }}
