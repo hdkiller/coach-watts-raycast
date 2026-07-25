@@ -177,16 +177,22 @@ export class CoachWattsApi {
     const responseText = await response.text().catch(() => "");
 
     if (!response.ok) {
-      let errorMessage = `Server error ${response.status}: ${response.statusText}`;
+      let detail = response.statusText || "Server Error";
       try {
         const parsed = JSON.parse(responseText);
-        if (parsed.message) errorMessage = parsed.message;
-        if (parsed.statusMessage) errorMessage = parsed.statusMessage;
-        if (parsed.error_description) errorMessage = parsed.error_description;
+        if (parsed.message) detail = parsed.message;
+        else if (parsed.statusMessage) detail = parsed.statusMessage;
+        else if (parsed.error_description) detail = parsed.error_description;
       } catch {
-        if (responseText) errorMessage = responseText;
+        if (
+          responseText &&
+          responseText.trim().length > 0 &&
+          responseText.length < 200
+        ) {
+          detail = responseText;
+        }
       }
-      throw new Error(errorMessage);
+      throw new Error(`[HTTP ${response.status}] ${detail}`);
     }
 
     if (

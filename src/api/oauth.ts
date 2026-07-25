@@ -68,7 +68,7 @@ export async function getAuthHeader(): Promise<Record<string, string>> {
     endpoint: `${baseUrl}/oauth/authorize`,
     clientId: "coach-watts-raycast",
     scope:
-      "workout:read health:read recommendation:read chat:read chat:write offline_access",
+      "workout:read health:read recommendation:read nutrition:read nutrition:write chat:read chat:write offline_access",
   });
 
   const { authorizationCode } = await oauthClient.authorize(authRequest);
