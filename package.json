@@ -1,0 +1,90 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "coach-watts",
+  "title": "Coach Watts",
+  "description": "Interact with Coach Watts training recommendations, workouts, wellness biometrics, and AI coach directly from Raycast.",
+  "icon": "command-icon.png",
+  "author": "hdkiller",
+  "categories": [
+    "Fitness",
+    "Productivity",
+    "Developer Tools"
+  ],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "today",
+      "title": "Today's Training",
+      "subtitle": "Coach Watts",
+      "description": "View today's activity recommendation and training plan.",
+      "mode": "view"
+    },
+    {
+      "name": "workouts",
+      "title": "Recent Workouts",
+      "subtitle": "Coach Watts",
+      "description": "Search and inspect recent completed workouts & metrics.",
+      "mode": "view"
+    },
+    {
+      "name": "wellness",
+      "title": "Wellness & Biometrics",
+      "subtitle": "Coach Watts",
+      "description": "View recent recovery, HRV, sleep, and fitness load.",
+      "mode": "view"
+    },
+    {
+      "name": "ask-coach",
+      "title": "Ask AI Coach",
+      "subtitle": "Coach Watts",
+      "description": "Ask Coach Watts AI for workout or recovery advice.",
+      "mode": "view"
+    },
+    {
+      "name": "sync",
+      "title": "Trigger Data Sync",
+      "subtitle": "Coach Watts",
+      "description": "Trigger data sync or activity analysis.",
+      "mode": "no-view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "baseUrl",
+      "type": "textfield",
+      "required": false,
+      "title": "Server URL",
+      "description": "Base URL of Coach Watts server (e.g. http://localhost:3000 or https://coachwatts.com)",
+      "default": "http://localhost:3000"
+    },
+    {
+      "name": "apiKey",
+      "type": "password",
+      "required": false,
+      "title": "API Key / Bearer Token",
+      "description": "API Key or Bearer Token generated in Coach Watts Settings"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.80.0",
+    "@raycast/utils": "^1.16.0",
+    "node-fetch": "^3.3.2",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^1.0.11",
+    "@types/node": "20.8.10",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "typecheck": "tsc --noEmit"
+  }
+}
