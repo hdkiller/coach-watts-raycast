@@ -131,7 +131,11 @@ export class CoachWattsApi {
       return null as unknown as T;
     }
 
-    return JSON.parse(responseText) as T;
+    try {
+      return JSON.parse(responseText) as T;
+    } catch {
+      return responseText as unknown as T;
+    }
   }
 
   public static async getTodayRecommendation(): Promise<RecommendationResponse | null> {
@@ -144,7 +148,7 @@ export class CoachWattsApi {
     );
     if (!res) return [];
     if (Array.isArray(res)) return res;
-    if ("workouts" in res && Array.isArray(res.workouts)) return res.workouts;
+    if (typeof res === "object" && "workouts" in res && Array.isArray(res.workouts)) return res.workouts;
     return [];
   }
 
@@ -156,7 +160,7 @@ export class CoachWattsApi {
     >(`/api/wellness?limit=${limit}`);
     if (!res) return [];
     if (Array.isArray(res)) return res;
-    if ("wellness" in res && Array.isArray(res.wellness)) return res.wellness;
+    if (typeof res === "object" && "wellness" in res && Array.isArray(res.wellness)) return res.wellness;
     return [];
   }
 
@@ -167,17 +171,36 @@ export class CoachWattsApi {
     });
     const roomId = roomRes.roomId;
 
-    // 2. Post user message to chat room
-    await this.request<unknown>("/api/chat/messages", {
+    // 2. Post user message to chat room (handles SSE stream response gracefully)
+    const baseUrl = getBaseUrl();
+    const authHeaders = await getAuthHeader();
+    const postRes = await fetch(`${baseUrl}/api/chat/messages`, {
       method: "POST",
-      body: {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...authHeaders,
+      },
+      body: JSON.stringify({
         roomId,
         messages: [{ role: "user", content: prompt }],
-      },
+      }),
     });
 
-    // 3. Poll for completed AI response (up to 20 seconds)
-    const maxAttempts = 20;
+    if (!postRes.ok) {
+      const errorText = await postRes.text().catch(() => "");
+      let errorMessage = `Failed to send message (${postRes.status})`;
+      try {
+        const parsed = JSON.parse(errorText);
+        if (parsed.message) errorMessage = parsed.message;
+      } catch {
+        if (errorText) errorMessage = errorText;
+      }
+      throw new Error(errorMessage);
+    }
+
+    // 3. Poll for completed AI response (up to 25 seconds)
+    const maxAttempts = 25;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
