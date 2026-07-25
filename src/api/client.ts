@@ -1,5 +1,6 @@
-import fetch from "node-fetch";
-import { getAuthHeader, getBaseUrl } from "./oauth";
+import { getAuthHeader, getBaseUrl, getWebUrl } from "./oauth";
+
+export { getWebUrl };
 
 export interface RecommendationResponse {
   id?: string;
@@ -67,7 +68,10 @@ export interface ChatResponse {
 }
 
 export class CoachWattsApi {
-  private static async request<T>(endpoint: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
+  private static async request<T>(
+    endpoint: string,
+    options: { method?: string; body?: unknown } = {},
+  ): Promise<T> {
     const baseUrl = getBaseUrl();
     const url = `${baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
 
@@ -106,14 +110,20 @@ export class CoachWattsApi {
   }
 
   public static async getRecentWorkouts(limit = 30): Promise<Workout[]> {
-    const res = await this.request<Workout[] | { workouts: Workout[] }>(`/api/workouts?limit=${limit}`);
+    const res = await this.request<Workout[] | { workouts: Workout[] }>(
+      `/api/workouts?limit=${limit}`,
+    );
     if (Array.isArray(res)) return res;
     if (res && Array.isArray(res.workouts)) return res.workouts;
     return [];
   }
 
-  public static async getWellnessHistory(limit = 14): Promise<WellnessRecord[]> {
-    const res = await this.request<WellnessRecord[] | { wellness: WellnessRecord[] }>(`/api/wellness?limit=${limit}`);
+  public static async getWellnessHistory(
+    limit = 14,
+  ): Promise<WellnessRecord[]> {
+    const res = await this.request<
+      WellnessRecord[] | { wellness: WellnessRecord[] }
+    >(`/api/wellness?limit=${limit}`);
     if (Array.isArray(res)) return res;
     if (res && Array.isArray(res.wellness)) return res.wellness;
     return [];
@@ -124,12 +134,24 @@ export class CoachWattsApi {
       method: "POST",
       body: { message: prompt },
     });
-    return res.response || res.reply || res.text || res.message || "No response text returned from AI Coach.";
+    return (
+      res.response ||
+      res.reply ||
+      res.text ||
+      res.message ||
+      "No response text returned from AI Coach."
+    );
   }
 
-  public static async triggerSync(): Promise<{ success: boolean; message?: string }> {
-    return this.request<{ success: boolean; message?: string }>("/api/orchestrate/full-sync", {
-      method: "POST",
-    });
+  public static async triggerSync(): Promise<{
+    success: boolean;
+    message?: string;
+  }> {
+    return this.request<{ success: boolean; message?: string }>(
+      "/api/orchestrate/full-sync",
+      {
+        method: "POST",
+      },
+    );
   }
 }

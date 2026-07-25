@@ -1,6 +1,14 @@
-import { ActionPanel, Action, Form, Detail, Icon, showToast, Toast } from "@raycast/api";
+import {
+  ActionPanel,
+  Action,
+  Form,
+  Detail,
+  Icon,
+  showToast,
+  Toast,
+} from "@raycast/api";
 import { useState } from "react";
-import { CoachWattsApi } from "./api/client";
+import { CoachWattsApi, getWebUrl } from "./api/client";
 
 export default function AskCoachCommand() {
   const [response, setResponse] = useState<string | null>(null);
@@ -9,23 +17,29 @@ export default function AskCoachCommand() {
 
   async function handleSubmit(values: { prompt: string }) {
     if (!values.prompt || values.prompt.trim().length === 0) {
-      showToast({ style: Toast.Style.Failure, title: "Please enter a question" });
+      showToast({
+        style: Toast.Style.Failure,
+        title: "Please enter a question",
+      });
       return;
     }
 
     setLoading(true);
     setQuestion(values.prompt);
-    showToast({ style: Toast.Style.Animated, title: "Asking Coach Watts AI..." });
+    showToast({
+      style: Toast.Style.Animated,
+      title: "Asking Coach Watts AI...",
+    });
 
     try {
       const result = await CoachWattsApi.askCoach(values.prompt);
       setResponse(result);
       showToast({ style: Toast.Style.Success, title: "Response Received" });
-    } catch (err: any) {
+    } catch (err: unknown) {
       showToast({
         style: Toast.Style.Failure,
         title: "Failed to get AI response",
-        message: err.message || "Server error",
+        message: err instanceof Error ? err.message : "Server error",
       });
     } finally {
       setLoading(false);
@@ -47,7 +61,10 @@ export default function AskCoachCommand() {
               }}
             />
             <Action.CopyToClipboard title="Copy Response" content={response} />
-            <Action.OpenInBrowser title="Open Coach Watts Chat" url="http://localhost:3000/chat" />
+            <Action.OpenInBrowser
+              title="Open Coach Watts Chat"
+              url={getWebUrl("/chat")}
+            />
           </ActionPanel>
         }
       />
@@ -59,7 +76,11 @@ export default function AskCoachCommand() {
       isLoading={loading}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title="Ask Coach" icon={Icon.Airplane} onSubmit={handleSubmit} />
+          <Action.SubmitForm
+            title="Ask Coach"
+            icon={Icon.Airplane}
+            onSubmit={handleSubmit}
+          />
         </ActionPanel>
       }
     >

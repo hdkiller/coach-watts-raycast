@@ -23,6 +23,13 @@ export function getBaseUrl(): string {
   return url;
 }
 
+export function getWebUrl(path = ""): string {
+  const baseUrl = getBaseUrl();
+  if (!path) return baseUrl;
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${baseUrl}${cleanPath}`;
+}
+
 export async function getAuthHeader(): Promise<Record<string, string>> {
   const prefs = getPreferenceValues<Preferences>();
 
@@ -60,7 +67,7 @@ export async function getAuthHeader(): Promise<Record<string, string>> {
   const authRequest = await oauthClient.authorizationRequest({
     endpoint: `${baseUrl}/oauth/authorize`,
     clientId: "coach-watts-raycast",
-    scope: "workout:read wellness:read recommendations:read chat:read chat:write sync:write",
+    scope: "workout:read health:read recommendation:read chat:read chat:write offline_access",
   });
 
   const { authorizationCode } = await oauthClient.authorize(authRequest);
