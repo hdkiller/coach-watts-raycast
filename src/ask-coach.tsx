@@ -63,7 +63,7 @@ export default function AskCoachCommand() {
   if (response) {
     return (
       <Detail
-        markdown={`# 💬 Question\n> ${question}\n\n---\n\n# 🤖 Coach Watts Response\n\n${response}`}
+        markdown={`# Question\n> ${question}\n\n---\n\n# Coach Watts Response\n\n${response}`}
         metadata={
           <Detail.Metadata>
             <Detail.Metadata.Label

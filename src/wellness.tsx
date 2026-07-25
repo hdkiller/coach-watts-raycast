@@ -85,7 +85,7 @@ export default function WellnessCommand() {
               accessories={accessories}
               detail={
                 <List.Item.Detail
-                  markdown={`# 📊 Biometrics & Recovery\n\n**Date:** ${formatDateFull(
+                  markdown={`# Biometrics & Recovery\n\n**Date:** ${formatDateFull(
                     log.date,
                   )}\n\n${
                     notes

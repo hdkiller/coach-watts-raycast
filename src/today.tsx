@@ -12,7 +12,7 @@ export default function TodayCommand() {
 
   if (error) {
     const errorMarkdown = `
-# ⚠️ Unable to Load Today's Recommendation
+# Unable to Load Today's Recommendation
 
 **Error:** ${error.message}
 
@@ -33,13 +33,13 @@ Please make sure Coach Watts server is running and your API Key / Base URL setti
 
   if (!isLoading && !data) {
     const noRecMarkdown = `
-# 🚴 Today's Training Recommendation
+# Today's Training Recommendation
 
 No recommendation has been generated for today yet.
 
 ---
 
-### 💡 **Next Steps**
+### Next Steps
 - Open **Coach Watts Dashboard** to trigger recommendation generation.
 - Or click **Refresh** below to check for updates.
 `;
@@ -100,19 +100,19 @@ No recommendation has been generated for today yet.
     analysis.targetTss ?? data?.plannedWorkout?.targetTss ?? "N/A";
 
   const markdown = `
-# 🚴 Today's Training Recommendation
+# Today's Training Recommendation
 
-### 📌 **Summary**
+### Summary
 ${summary}
 
 ---
 
-### 💡 **Actionable Advice & Reasoning**
+### Actionable Advice & Reasoning
 ${actionableAdvice}
 
 ---
 
-### 📊 **Target Metrics**
+### Target Metrics
 - **Sport Type:** ${sportType}
 - **Intensity:** ${intensity}
 - **Target Duration:** ${durationStr}

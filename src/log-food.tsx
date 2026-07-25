@@ -63,7 +63,7 @@ export default function LogFoodCommand() {
           ? `Logged ${itemsCount} food item${itemsCount > 1 ? "s" : ""}!`
           : "Logged meal successfully!";
 
-      await showHUD(`🥗 ${toastTitle}`);
+      await showHUD(toastTitle);
     } catch (err: unknown) {
       showToast({
         style: Toast.Style.Failure,
@@ -108,7 +108,7 @@ export default function LogFoodCommand() {
         await CoachWattsApi.quickAddHydration(volume);
         setManualWater("");
         await revalidate();
-        await showHUD(`💧 Logged ${volume}ml water`);
+        await showHUD(`Logged ${volume}ml water`);
         setLoading(false);
         return;
       }
@@ -140,7 +140,7 @@ export default function LogFoodCommand() {
       setManualWater("");
       await revalidate();
 
-      await showHUD(`✅ Logged ${newItem.name} (${newItem.calories} kcal)`);
+      await showHUD(`Logged ${newItem.name} (${newItem.calories} kcal)`);
     } catch (err: unknown) {
       showToast({
         style: Toast.Style.Failure,
@@ -158,7 +158,7 @@ export default function LogFoodCommand() {
     try {
       await CoachWattsApi.quickAddHydration(volumeMl);
       await revalidate();
-      await showHUD(`💧 Quick Added ${volumeMl}ml Water`);
+      await showHUD(`Quick Added ${volumeMl}ml Water`);
     } catch (err: unknown) {
       showToast({
         style: Toast.Style.Failure,
@@ -175,7 +175,7 @@ export default function LogFoodCommand() {
     const url = `coachwatts://(app)/(tabs)/log?action=${action}`;
     try {
       await open(url);
-      await showHUD(`📱 Opening Coach Watts Mobile...`);
+      await showHUD("Opening Coach Watts Mobile...");
     } catch {
       showToast({
         style: Toast.Style.Failure,
@@ -267,7 +267,7 @@ export default function LogFoodCommand() {
       }
     >
       <Form.Description
-        title="📊 Today's Fueling Progress"
+        title="Today's Fueling Progress"
         text={`Calories: ${loggedCal} / ${targetCal} kcal (${calPct}%) | Protein: ${loggedProtein}g / ${targetProtein}g | Carbs: ${loggedCarbs}g / ${targetCarbs}g | Fat: ${loggedFat}g / ${targetFat}g | Water: ${loggedWater}ml`}
       />
 
@@ -279,12 +279,12 @@ export default function LogFoodCommand() {
       >
         <Form.Dropdown.Item
           value="ai"
-          title="✨ AI Natural Language Quick Log"
+          title="AI Natural Language Quick Log"
           icon={Icon.Stars}
         />
         <Form.Dropdown.Item
           value="manual"
-          title="📝 Manual Macro Entry Form"
+          title="Manual Macro Entry Form"
           icon={Icon.Pencil}
         />
       </Form.Dropdown>
@@ -300,7 +300,7 @@ export default function LogFoodCommand() {
             value={aiQuery}
             onChange={setAiQuery}
           />
-          <Form.Description text="💡 Tip: Type naturally! Coach Watts AI will calculate calories, protein, carbs, fat, and absorption speed automatically." />
+          <Form.Description text="Tip: Type naturally! Coach Watts AI will calculate calories, protein, carbs, fat, and absorption speed automatically." />
         </>
       ) : (
         <>
@@ -317,11 +317,11 @@ export default function LogFoodCommand() {
             value={manualMeal}
             onChange={setManualMeal}
           >
-            <Form.Dropdown.Item value="BREAKFAST" title="🍳 Breakfast" />
-            <Form.Dropdown.Item value="LUNCH" title="🥗 Lunch" />
-            <Form.Dropdown.Item value="DINNER" title="🍲 Dinner" />
-            <Form.Dropdown.Item value="SNACK" title="🍎 Snack" />
-            <Form.Dropdown.Item value="OTHER" title="🍱 Other" />
+            <Form.Dropdown.Item value="BREAKFAST" title="Breakfast" />
+            <Form.Dropdown.Item value="LUNCH" title="Lunch" />
+            <Form.Dropdown.Item value="DINNER" title="Dinner" />
+            <Form.Dropdown.Item value="SNACK" title="Snack" />
+            <Form.Dropdown.Item value="OTHER" title="Other" />
           </Form.Dropdown>
           <Form.TextField
             id="manualCalories"
