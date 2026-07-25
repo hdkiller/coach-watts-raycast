@@ -2,7 +2,7 @@ import { ActionPanel, Action, Detail, Icon, Color } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { CoachWattsApi, getWebUrl } from "./api/client";
 
-function formatLocalDate(dateString?: string): string {
+export function formatLocalDate(dateString?: string): string {
   if (!dateString) return new Date().toLocaleDateString();
   const normalized = /^\d{4}-\d{2}-\d{2}$/.test(dateString)
     ? `${dateString}T12:00:00`

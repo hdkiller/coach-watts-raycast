@@ -2,7 +2,7 @@ import { ActionPanel, Action, List, Icon, Color } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { CoachWattsApi, Workout, getWebUrl } from "./api/client";
 
-function formatDuration(seconds?: number): string {
+export function formatDuration(seconds?: number): string {
   if (!seconds || seconds <= 0) return "N/A";
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
@@ -10,20 +10,15 @@ function formatDuration(seconds?: number): string {
   return `${mins}m`;
 }
 
-function formatDistance(meters?: number): string {
+export function formatDistance(meters?: number): string {
   if (!meters || meters <= 0) return "N/A";
   const km = meters / 1000;
   return `${km.toFixed(1)} km`;
 }
 
-function formatPace(workout: Workout): string | undefined {
+export function formatPace(workout: Workout): string | undefined {
   const isRun = workout.type?.toLowerCase() === "run";
-  if (
-    !isRun ||
-    !workout.durationSec ||
-    !workout.distanceMeters ||
-    workout.distanceMeters <= 0
-  ) {
+  if (!isRun || !workout.durationSec || !workout.distanceMeters || workout.distanceMeters <= 0) {
     return undefined;
   }
   const paceSecPerKm = workout.durationSec / (workout.distanceMeters / 1000);
@@ -33,12 +28,7 @@ function formatPace(workout: Workout): string | undefined {
 }
 
 export default function WorkoutsCommand() {
-  const {
-    isLoading,
-    data: workouts = [],
-    error,
-    revalidate,
-  } = usePromise(() => CoachWattsApi.getRecentWorkouts(50));
+  const { isLoading, data: workouts = [], error, revalidate } = usePromise(() => CoachWattsApi.getRecentWorkouts(50));
 
   return (
     <List
@@ -60,17 +50,12 @@ export default function WorkoutsCommand() {
         />
       ) : (
         workouts.map((workout: Workout) => {
-          const dateNormalized = /^\d{4}-\d{2}-\d{2}$/.test(workout.date)
-            ? `${workout.date}T12:00:00`
-            : workout.date;
-          const formattedDate = new Date(dateNormalized).toLocaleDateString(
-            undefined,
-            {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            },
-          );
+          const dateNormalized = /^\d{4}-\d{2}-\d{2}$/.test(workout.date) ? `${workout.date}T12:00:00` : workout.date;
+          const formattedDate = new Date(dateNormalized).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
 
           const pace = formatPace(workout);
 
@@ -81,16 +66,8 @@ export default function WorkoutsCommand() {
               subtitle={formattedDate}
               keywords={[workout.type || "", workout.title]}
               accessories={[
-                {
-                  text: workout.tss
-                    ? `${Math.round(workout.tss)} TSS`
-                    : undefined,
-                },
-                {
-                  text: pace
-                    ? `Pace: ${pace}`
-                    : formatDuration(workout.durationSec),
-                },
+                { text: workout.tss ? `${Math.round(workout.tss)} TSS` : undefined },
+                { text: pace ? `Pace: ${pace}` : formatDuration(workout.durationSec) },
               ]}
               detail={
                 <List.Item.Detail
@@ -99,49 +76,23 @@ export default function WorkoutsCommand() {
                   }`}
                   metadata={
                     <List.Item.Detail.Metadata>
-                      <List.Item.Detail.Metadata.Label
-                        title="Duration"
-                        text={formatDuration(workout.durationSec)}
-                      />
-                      <List.Item.Detail.Metadata.Label
-                        title="Distance"
-                        text={formatDistance(workout.distanceMeters)}
-                      />
-                      {pace !== undefined && (
-                        <List.Item.Detail.Metadata.Label
-                          title="Avg Pace"
-                          text={pace}
-                        />
-                      )}
+                      <List.Item.Detail.Metadata.Label title="Duration" text={formatDuration(workout.durationSec)} />
+                      <List.Item.Detail.Metadata.Label title="Distance" text={formatDistance(workout.distanceMeters)} />
+                      {pace !== undefined && <List.Item.Detail.Metadata.Label title="Avg Pace" text={pace} />}
                       {workout.tss !== undefined && (
-                        <List.Item.Detail.Metadata.Label
-                          title="TSS"
-                          text={String(Math.round(workout.tss))}
-                        />
+                        <List.Item.Detail.Metadata.Label title="TSS" text={String(Math.round(workout.tss))} />
                       )}
                       {workout.normalizedPower !== undefined && (
-                        <List.Item.Detail.Metadata.Label
-                          title="Normalized Power"
-                          text={`${workout.normalizedPower} W`}
-                        />
+                        <List.Item.Detail.Metadata.Label title="Normalized Power" text={`${workout.normalizedPower} W`} />
                       )}
                       {workout.averageWatts !== undefined && (
-                        <List.Item.Detail.Metadata.Label
-                          title="Avg Power"
-                          text={`${workout.averageWatts} W`}
-                        />
+                        <List.Item.Detail.Metadata.Label title="Avg Power" text={`${workout.averageWatts} W`} />
                       )}
                       {workout.averageHr !== undefined && (
-                        <List.Item.Detail.Metadata.Label
-                          title="Avg Heart Rate"
-                          text={`${workout.averageHr} bpm`}
-                        />
+                        <List.Item.Detail.Metadata.Label title="Avg Heart Rate" text={`${workout.averageHr} bpm`} />
                       )}
                       {workout.elevationGain !== undefined && (
-                        <List.Item.Detail.Metadata.Label
-                          title="Elevation Gain"
-                          text={`${workout.elevationGain} m`}
-                        />
+                        <List.Item.Detail.Metadata.Label title="Elevation Gain" text={`${workout.elevationGain} m`} />
                       )}
                       <List.Item.Detail.Metadata.Separator />
                       <List.Item.Detail.Metadata.TagList title="Source">
@@ -156,19 +107,9 @@ export default function WorkoutsCommand() {
               }
               actions={
                 <ActionPanel>
-                  <Action
-                    title="Refresh Workouts"
-                    icon={Icon.Redo}
-                    onAction={revalidate}
-                  />
-                  <Action.CopyToClipboard
-                    title="Copy Workout Title"
-                    content={workout.title}
-                  />
-                  <Action.OpenInBrowser
-                    title="Open in Coach Watts"
-                    url={getWebUrl("/activities")}
-                  />
+                  <Action title="Refresh Workouts" icon={Icon.Redo} onAction={revalidate} />
+                  <Action.CopyToClipboard title="Copy Workout Title" content={workout.title} />
+                  <Action.OpenInBrowser title="Open in Coach Watts" url={getWebUrl("/activities")} />
                 </ActionPanel>
               }
             />

@@ -21,7 +21,7 @@ export interface RecommendationResponse {
   recommendationText?: string;
   reasoning?: string;
   actionableAdvice?: string;
-  analysisJson?: Record<string, any>;
+  analysisJson?: Record<string, unknown>;
   plannedWorkout?: {
     id?: string;
     title?: string;
@@ -139,7 +139,9 @@ export class CoachWattsApi {
   }
 
   public static async getTodayRecommendation(): Promise<RecommendationResponse | null> {
-    return this.request<RecommendationResponse | null>("/api/recommendations/today");
+    return this.request<RecommendationResponse | null>(
+      "/api/recommendations/today",
+    );
   }
 
   public static async getRecentWorkouts(limit = 30): Promise<Workout[]> {
@@ -148,7 +150,12 @@ export class CoachWattsApi {
     );
     if (!res) return [];
     if (Array.isArray(res)) return res;
-    if (typeof res === "object" && "workouts" in res && Array.isArray(res.workouts)) return res.workouts;
+    if (
+      typeof res === "object" &&
+      "workouts" in res &&
+      Array.isArray(res.workouts)
+    )
+      return res.workouts;
     return [];
   }
 
@@ -160,7 +167,12 @@ export class CoachWattsApi {
     >(`/api/wellness?limit=${limit}`);
     if (!res) return [];
     if (Array.isArray(res)) return res;
-    if (typeof res === "object" && "wellness" in res && Array.isArray(res.wellness)) return res.wellness;
+    if (
+      typeof res === "object" &&
+      "wellness" in res &&
+      Array.isArray(res.wellness)
+    )
+      return res.wellness;
     return [];
   }
 

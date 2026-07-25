@@ -67,7 +67,8 @@ export async function getAuthHeader(): Promise<Record<string, string>> {
   const authRequest = await oauthClient.authorizationRequest({
     endpoint: `${baseUrl}/oauth/authorize`,
     clientId: "coach-watts-raycast",
-    scope: "workout:read health:read recommendation:read chat:read chat:write offline_access",
+    scope:
+      "workout:read health:read recommendation:read chat:read chat:write offline_access",
   });
 
   const { authorizationCode } = await oauthClient.authorize(authRequest);
@@ -79,7 +80,7 @@ export async function getAuthHeader(): Promise<Record<string, string>> {
 
 async function fetchOAuthToken(
   authRequest: OAuth.AuthorizationRequest,
-  authorizationCode: string
+  authorizationCode: string,
 ): Promise<OAuth.TokenResponse> {
   const baseUrl = getBaseUrl();
   const response = await fetch(`${baseUrl}/api/oauth/token`, {
@@ -99,13 +100,17 @@ async function fetchOAuthToken(
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw new Error(`OAuth token exchange failed (${response.status}): ${text}`);
+    throw new Error(
+      `OAuth token exchange failed (${response.status}): ${text}`,
+    );
   }
 
   return (await response.json()) as OAuth.TokenResponse;
 }
 
-async function refreshOAuthToken(refreshToken: string): Promise<OAuth.TokenResponse> {
+async function refreshOAuthToken(
+  refreshToken: string,
+): Promise<OAuth.TokenResponse> {
   const baseUrl = getBaseUrl();
   const response = await fetch(`${baseUrl}/api/oauth/token`, {
     method: "POST",

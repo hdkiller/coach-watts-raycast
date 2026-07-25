@@ -84,9 +84,20 @@ npm run dev
 # Run TypeScript type check
 npm run typecheck
 
+# Run full pre-submission verification (lint, typecheck, tests, build)
+npm run verify
+
 # Build production extension bundle
 npm run build
+
+# Publish / Submit Pull Request to official Raycast Store
+npm run publish
 ```
+
+### 🏬 Raycast Store Guidelines
+For full submission requirements, code quality, and UX standards checklist, see:
+👉 [Raycast Store Requirements & Standards Document](docs/raycast-store-requirements.md)
+
 
 ---
 
