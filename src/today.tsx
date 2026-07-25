@@ -64,20 +64,35 @@ No recommendation has been generated for today yet.
     );
   }
 
-  const rec = data?.recommendation || data;
+  const analysis = (data?.analysisJson as Record<string, any>) || {};
+  const rec = data?.recommendation || "";
+  const reasoning = data?.reasoning || "";
+
   const summary =
-    rec?.summary ||
-    rec?.recommendationText ||
+    analysis.summary ||
+    (typeof rec === "string" ? rec : (rec as any)?.summary) ||
     "No summary provided for today's recommendation.";
+
   const actionableAdvice =
-    rec?.actionableAdvice ||
+    analysis.actionableAdvice ||
+    reasoning ||
     "Follow your scheduled workout or rest as recommended.";
-  const sportType = rec?.sportType || "General";
-  const intensity = rec?.intensity || "Moderate";
-  const duration = rec?.targetDurationMinutes
-    ? `${rec.targetDurationMinutes} mins`
-    : "N/A";
-  const targetTss = rec?.targetTss ?? "N/A";
+
+  const sportType =
+    analysis.sportType || data?.plannedWorkout?.sportType || "General";
+
+  const intensity = analysis.intensity || "Moderate";
+
+  const durationMins =
+    analysis.targetDurationMinutes ||
+    (data?.plannedWorkout?.targetDurationSec
+      ? Math.round(data.plannedWorkout.targetDurationSec / 60)
+      : undefined);
+
+  const duration = durationMins ? `${durationMins} mins` : "N/A";
+
+  const targetTss =
+    analysis.targetTss ?? data?.plannedWorkout?.targetTss ?? "N/A";
 
   const markdown = `
 # 🚴 Today's Training Recommendation
@@ -87,7 +102,7 @@ ${summary}
 
 ---
 
-### 💡 **Actionable Advice**
+### 💡 **Actionable Advice & Reasoning**
 ${actionableAdvice}
 
 ---

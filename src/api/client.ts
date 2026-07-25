@@ -7,22 +7,34 @@ export interface RecommendationResponse {
   date?: string;
   status?: string;
   summary?: string;
-  actionableAdvice?: string;
+  recommendation?:
+    | string
+    | {
+        summary?: string;
+        actionableAdvice?: string;
+        recommendationText?: string;
+        sportType?: string;
+        intensity?: string;
+        targetDurationMinutes?: number;
+        targetTss?: number;
+      };
   recommendationText?: string;
+  reasoning?: string;
+  actionableAdvice?: string;
+  analysisJson?: Record<string, any>;
+  plannedWorkout?: {
+    id?: string;
+    title?: string;
+    description?: string;
+    sportType?: string;
+    targetDurationSec?: number;
+    targetTss?: number;
+  };
   targetDurationMinutes?: number;
   targetTss?: number;
   sportType?: string;
   intensity?: string;
   confidenceScore?: number;
-  recommendation?: {
-    summary?: string;
-    actionableAdvice?: string;
-    recommendationText?: string;
-    sportType?: string;
-    intensity?: string;
-    targetDurationMinutes?: number;
-    targetTss?: number;
-  };
 }
 
 export interface Workout {
@@ -33,6 +45,7 @@ export interface Workout {
   durationSec?: number;
   distanceMeters?: number;
   tss?: number;
+  trainingLoad?: number;
   averageWatts?: number;
   normalizedPower?: number;
   averageHr?: number;
@@ -47,17 +60,23 @@ export interface WellnessRecord {
   id: string;
   date: string;
   hrv?: number;
+  hrvSdnn?: number;
   rhr?: number;
+  restingHr?: number;
+  avgSleepingHr?: number;
   sleepHours?: number;
+  sleepSecs?: number;
   sleepScore?: number;
   recoveryScore?: number;
   readinessScore?: number;
+  readiness?: number;
   weight?: number;
   ctl?: number;
   atl?: number;
   tsb?: number;
   stress?: number;
   notes?: string;
+  comments?: string;
 }
 
 export interface ChatMessage {
