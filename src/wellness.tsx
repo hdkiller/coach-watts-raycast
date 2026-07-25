@@ -1,6 +1,11 @@
 import { ActionPanel, Action, List, Icon } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { CoachWattsApi, WellnessRecord, getWebUrl } from "./api/client";
+import {
+  getRecoveryColor,
+  formatDateFull,
+  formatRelativeDate,
+} from "./utils/ui";
 
 export default function WellnessCommand() {
   const {
@@ -13,7 +18,7 @@ export default function WellnessCommand() {
   return (
     <List
       isLoading={isLoading}
-      searchBarPlaceholder="Filter by date..."
+      searchBarPlaceholder="Filter wellness logs by date..."
       isShowingDetail={logs.length > 0}
     >
       {error ? (
@@ -30,90 +35,105 @@ export default function WellnessCommand() {
         />
       ) : (
         logs.map((log: WellnessRecord) => {
-          const dateNormalized = /^\d{4}-\d{2}-\d{2}$/.test(log.date)
-            ? `${log.date}T12:00:00`
-            : log.date;
-          const dateStr = new Date(dateNormalized).toLocaleDateString(
-            undefined,
-            {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            },
-          );
-
           const recoveryScore =
             log.recoveryScore ?? log.readinessScore ?? log.readiness;
-          const scoreText =
-            recoveryScore !== undefined
-              ? `Recovery: ${recoveryScore}%`
-              : undefined;
+          const recoveryColor = getRecoveryColor(recoveryScore);
 
           const hrv = log.hrv ?? log.hrvSdnn;
           const rhr = log.rhr ?? log.restingHr ?? log.avgSleepingHr;
 
           const sleepHours =
             log.sleepHours ??
-            (log.sleepSecs ? log.sleepSecs / 3600 : undefined);
+            (log.sleepSecs != null ? log.sleepSecs / 3600 : undefined);
 
           const tsb =
             log.tsb ??
-            (log.ctl !== undefined && log.atl !== undefined
+            (log.ctl != null && log.atl != null
               ? Math.round(log.ctl - log.atl)
               : undefined);
 
           const notes = log.notes || log.comments;
 
+          const accessories: List.Item.Accessory[] = [];
+
+          if (recoveryScore != null) {
+            accessories.push({
+              tag: {
+                value: `${Math.round(recoveryScore)}%`,
+                color: recoveryColor,
+              },
+            });
+          }
+
+          if (hrv != null) {
+            accessories.push({
+              text: `HRV: ${Math.round(hrv)}ms`,
+            });
+          } else if (sleepHours != null) {
+            accessories.push({
+              text: `Sleep: ${sleepHours.toFixed(1)}h`,
+            });
+          }
+
           return (
             <List.Item
               key={log.id || log.date}
-              title={dateStr}
-              subtitle={scoreText}
-              accessories={[
-                { text: hrv ? `HRV: ${Math.round(hrv)}ms` : undefined },
-                { text: rhr ? `RHR: ${Math.round(rhr)}` : undefined },
-                {
-                  text: sleepHours
-                    ? `Sleep: ${sleepHours.toFixed(1)}h`
-                    : undefined,
-                },
-              ]}
+              icon={{ source: Icon.Heart, tintColor: recoveryColor }}
+              title={formatRelativeDate(log.date)}
+              subtitle={formatDateFull(log.date)}
+              keywords={[log.date]}
+              accessories={accessories}
               detail={
                 <List.Item.Detail
-                  markdown={`# 📊 Biometrics for ${dateStr}\n\n${notes ? `> ${notes}` : "*No additional notes for this day.*"}`}
+                  markdown={`# 📊 Biometrics & Recovery\n\n**Date:** ${formatDateFull(
+                    log.date,
+                  )}\n\n${
+                    notes
+                      ? `> ${notes}`
+                      : "*No additional notes logged for this day.*"
+                  }`}
                   metadata={
                     <List.Item.Detail.Metadata>
-                      {recoveryScore !== undefined && (
-                        <List.Item.Detail.Metadata.Label
-                          title="Recovery Score"
-                          text={`${recoveryScore}%`}
-                        />
+                      {recoveryScore != null && (
+                        <List.Item.Detail.Metadata.TagList title="Recovery Status">
+                          <List.Item.Detail.Metadata.TagList.Item
+                            text={`${Math.round(recoveryScore)}%`}
+                            color={recoveryColor}
+                          />
+                        </List.Item.Detail.Metadata.TagList>
                       )}
-                      {hrv !== undefined && (
+                      {hrv != null && (
                         <List.Item.Detail.Metadata.Label
                           title="HRV (rMSSD)"
                           text={`${Math.round(hrv)} ms`}
                         />
                       )}
-                      {rhr !== undefined && (
+                      {rhr != null && (
                         <List.Item.Detail.Metadata.Label
                           title="Resting Heart Rate"
                           text={`${Math.round(rhr)} bpm`}
                         />
                       )}
-                      {sleepHours !== undefined && (
+                      {sleepHours != null && (
                         <List.Item.Detail.Metadata.Label
                           title="Sleep Duration"
                           text={`${sleepHours.toFixed(1)} hours`}
+                          icon={Icon.Moon}
                         />
                       )}
-                      {log.sleepScore !== undefined && (
+                      {log.sleepScore != null && (
                         <List.Item.Detail.Metadata.Label
                           title="Sleep Score"
-                          text={`${log.sleepScore}%`}
+                          text={`${Math.round(log.sleepScore)}%`}
                         />
                       )}
-                      {log.weight !== undefined && (
+                      {log.stress != null && (
+                        <List.Item.Detail.Metadata.Label
+                          title="Stress Level"
+                          text={`${Math.round(log.stress)}`}
+                        />
+                      )}
+                      {log.weight != null && (
                         <List.Item.Detail.Metadata.Label
                           title="Weight"
                           text={`${log.weight.toFixed(1)} kg`}
@@ -122,15 +142,19 @@ export default function WellnessCommand() {
                       <List.Item.Detail.Metadata.Separator />
                       <List.Item.Detail.Metadata.Label
                         title="Fitness (CTL)"
-                        text={log.ctl ? String(Math.round(log.ctl)) : "N/A"}
+                        text={
+                          log.ctl != null ? String(Math.round(log.ctl)) : "N/A"
+                        }
                       />
                       <List.Item.Detail.Metadata.Label
                         title="Fatigue (ATL)"
-                        text={log.atl ? String(Math.round(log.atl)) : "N/A"}
+                        text={
+                          log.atl != null ? String(Math.round(log.atl)) : "N/A"
+                        }
                       />
                       <List.Item.Detail.Metadata.Label
                         title="Form (TSB)"
-                        text={tsb !== undefined ? String(tsb) : "N/A"}
+                        text={tsb != null ? String(tsb) : "N/A"}
                       />
                     </List.Item.Detail.Metadata>
                   }

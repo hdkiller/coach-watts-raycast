@@ -15,24 +15,38 @@ export default function AskCoachCommand() {
   const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState("");
 
-  async function handleSubmit(values: { prompt: string }) {
-    if (!values.prompt || values.prompt.trim().length === 0) {
+  const presetQuestions = [
+    "What training or workout should I do today?",
+    "How is my current recovery and HRV looking?",
+    "How should I adjust my intensity based on my fatigue?",
+    "Can you analyze my recent training load (CTL / ATL / TSB)?",
+  ];
+
+  async function handleSubmit(values: { prompt: string; preset?: string }) {
+    const finalPrompt =
+      values.prompt && values.prompt.trim().length > 0
+        ? values.prompt.trim()
+        : values.preset && values.preset !== "custom"
+          ? values.preset
+          : "";
+
+    if (!finalPrompt) {
       showToast({
         style: Toast.Style.Failure,
-        title: "Please enter a question",
+        title: "Please enter or select a question",
       });
       return;
     }
 
     setLoading(true);
-    setQuestion(values.prompt);
+    setQuestion(finalPrompt);
     showToast({
       style: Toast.Style.Animated,
       title: "Asking Coach Watts AI...",
     });
 
     try {
-      const result = await CoachWattsApi.askCoach(values.prompt);
+      const result = await CoachWattsApi.askCoach(finalPrompt);
       setResponse(result);
       showToast({ style: Toast.Style.Success, title: "Response Received" });
     } catch (err: unknown) {
@@ -50,6 +64,16 @@ export default function AskCoachCommand() {
     return (
       <Detail
         markdown={`# 💬 Question\n> ${question}\n\n---\n\n# 🤖 Coach Watts Response\n\n${response}`}
+        metadata={
+          <Detail.Metadata>
+            <Detail.Metadata.Label
+              title="Model"
+              text="Coach Watts AI"
+              icon={Icon.Stars}
+            />
+            <Detail.Metadata.Label title="Status" text="Completed" />
+          </Detail.Metadata>
+        }
         actions={
           <ActionPanel>
             <Action
@@ -77,17 +101,33 @@ export default function AskCoachCommand() {
       actions={
         <ActionPanel>
           <Action.SubmitForm
-            title="Ask Coach"
+            title="Ask Coach Watts"
             icon={Icon.Airplane}
             onSubmit={handleSubmit}
           />
         </ActionPanel>
       }
     >
+      <Form.Dropdown id="preset" title="Preset Question" defaultValue="custom">
+        <Form.Dropdown.Item
+          title="Custom Question (type below)"
+          value="custom"
+          icon={Icon.Pencil}
+        />
+        {presetQuestions.map((q) => (
+          <Form.Dropdown.Item
+            key={q}
+            title={q}
+            value={q}
+            icon={Icon.QuestionMark}
+          />
+        ))}
+      </Form.Dropdown>
+
       <Form.TextArea
         id="prompt"
         title="Question / Prompt"
-        placeholder="e.g. How should I adjust my training based on my current fatigue? Or suggest a workout for today."
+        placeholder="e.g. How should I adjust my training based on my current fatigue?"
         enableMarkdown
       />
     </Form>

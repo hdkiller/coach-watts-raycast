@@ -26,6 +26,8 @@ declare namespace Preferences {
   export type Wellness = ExtensionPreferences & {}
   /** Preferences accessible in the `ask-coach` command */
   export type AskCoach = ExtensionPreferences & {}
+  /** Preferences accessible in the `log-food` command */
+  export type LogFood = ExtensionPreferences & {}
   /** Preferences accessible in the `sync` command */
   export type Sync = ExtensionPreferences & {}
 }
@@ -39,6 +41,8 @@ declare namespace Arguments {
   export type Wellness = {}
   /** Arguments passed to the `ask-coach` command */
   export type AskCoach = {}
+  /** Arguments passed to the `log-food` command */
+  export type LogFood = {}
   /** Arguments passed to the `sync` command */
   export type Sync = {}
 }

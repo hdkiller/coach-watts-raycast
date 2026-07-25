@@ -40,6 +40,13 @@
       "mode": "view"
     },
     {
+      "name": "log-food",
+      "title": "Log Food & Nutrition",
+      "subtitle": "Coach Watts",
+      "description": "Swiftly log meals, snacks, or hydration using AI natural text, quick actions, or mobile deep links.",
+      "mode": "view"
+    },
+    {
       "name": "sync",
       "title": "Trigger Data Sync",
       "subtitle": "Coach Watts",

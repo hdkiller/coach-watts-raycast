@@ -1,14 +1,9 @@
-import { ActionPanel, Action, Detail, Icon, Color } from "@raycast/api";
+import { ActionPanel, Action, Detail, Icon } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { CoachWattsApi, getWebUrl } from "./api/client";
+import { getSportColor, getIntensityColor, formatDateFull } from "./utils/ui";
 
-export function formatLocalDate(dateString?: string): string {
-  if (!dateString) return new Date().toLocaleDateString();
-  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(dateString)
-    ? `${dateString}T12:00:00`
-    : dateString;
-  return new Date(normalized).toLocaleDateString();
-}
+export { formatDateFull as formatLocalDate };
 
 export default function TodayCommand() {
   const { isLoading, data, error, revalidate } = usePromise(() =>
@@ -64,24 +59,34 @@ No recommendation has been generated for today yet.
     );
   }
 
-  const analysis = (data?.analysisJson as Record<string, any>) || {};
+  const analysis = (data?.analysisJson as Record<string, unknown>) || {};
   const rec = data?.recommendation || "";
   const reasoning = data?.reasoning || "";
 
   const summary =
-    analysis.summary ||
-    (typeof rec === "string" ? rec : (rec as any)?.summary) ||
+    (typeof analysis.summary === "string" ? analysis.summary : undefined) ||
+    (typeof rec === "string"
+      ? rec
+      : typeof (rec as Record<string, unknown>)?.summary === "string"
+        ? ((rec as Record<string, unknown>).summary as string)
+        : undefined) ||
     "No summary provided for today's recommendation.";
 
   const actionableAdvice =
-    analysis.actionableAdvice ||
+    (typeof analysis.actionableAdvice === "string"
+      ? analysis.actionableAdvice
+      : undefined) ||
     reasoning ||
     "Follow your scheduled workout or rest as recommended.";
 
   const sportType =
-    analysis.sportType || data?.plannedWorkout?.sportType || "General";
+    (typeof analysis.sportType === "string" ? analysis.sportType : undefined) ||
+    data?.plannedWorkout?.sportType ||
+    "General";
 
-  const intensity = analysis.intensity || "Moderate";
+  const intensity =
+    (typeof analysis.intensity === "string" ? analysis.intensity : undefined) ||
+    "Moderate";
 
   const durationMins =
     analysis.targetDurationMinutes ||
@@ -89,7 +94,7 @@ No recommendation has been generated for today yet.
       ? Math.round(data.plannedWorkout.targetDurationSec / 60)
       : undefined);
 
-  const duration = durationMins ? `${durationMins} mins` : "N/A";
+  const durationStr = durationMins ? `${durationMins} mins` : "N/A";
 
   const targetTss =
     analysis.targetTss ?? data?.plannedWorkout?.targetTss ?? "N/A";
@@ -97,7 +102,7 @@ No recommendation has been generated for today yet.
   const markdown = `
 # 🚴 Today's Training Recommendation
 
-### **Summary**
+### 📌 **Summary**
 ${summary}
 
 ---
@@ -110,7 +115,7 @@ ${actionableAdvice}
 ### 📊 **Target Metrics**
 - **Sport Type:** ${sportType}
 - **Intensity:** ${intensity}
-- **Target Duration:** ${duration}
+- **Target Duration:** ${durationStr}
 - **Target TSS:** ${targetTss}
 `;
 
@@ -122,18 +127,26 @@ ${actionableAdvice}
         <Detail.Metadata>
           <Detail.Metadata.Label
             title="Date"
-            text={formatLocalDate(data?.date)}
+            text={formatDateFull(data?.date)}
+            icon={Icon.Calendar}
           />
           <Detail.Metadata.TagList title="Sport">
-            <Detail.Metadata.TagList.Item text={sportType} color={Color.Blue} />
+            <Detail.Metadata.TagList.Item
+              text={sportType}
+              color={getSportColor(sportType)}
+            />
           </Detail.Metadata.TagList>
           <Detail.Metadata.TagList title="Intensity">
             <Detail.Metadata.TagList.Item
               text={intensity}
-              color={Color.Orange}
+              color={getIntensityColor(intensity)}
             />
           </Detail.Metadata.TagList>
-          <Detail.Metadata.Label title="Target Duration" text={duration} />
+          <Detail.Metadata.Label
+            title="Target Duration"
+            text={durationStr}
+            icon={Icon.Clock}
+          />
           <Detail.Metadata.Label title="Target TSS" text={String(targetTss)} />
           <Detail.Metadata.Separator />
           <Detail.Metadata.Label

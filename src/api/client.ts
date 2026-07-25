@@ -83,8 +83,74 @@ export interface ChatMessage {
   id?: string;
   role: string;
   content?: string;
-  parts?: Array<{ type: string; text?: string }>;
-  metadata?: { turnStatus?: string };
+  parts?: Array<{ type?: string; text?: string } | string>;
+  metadata?: { turnStatus?: string; [key: string]: unknown };
+}
+
+export interface NutritionItem {
+  id?: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber?: number;
+  sugar?: number;
+  meal?: string;
+  logged_at?: string;
+  amount?: number;
+  unit?: string;
+  quantity?: string;
+  waterMl?: number;
+}
+
+export interface NutritionDayTotals {
+  id?: string;
+  date: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  waterMl: number;
+  targetCalories?: number;
+  targetProtein?: number;
+  targetCarbs?: number;
+  targetFat?: number;
+  items?: NutritionItem[];
+  meals?: {
+    breakfast?: NutritionItem[];
+    lunch?: NutritionItem[];
+    dinner?: NutritionItem[];
+    snacks?: NutritionItem[];
+  };
+}
+
+export interface LogMealQueryResult {
+  success: boolean;
+  message?: string;
+  parsedItems?: NutritionItem[];
+  nutrition?: NutritionDayTotals;
+}
+
+export function parseAiStreamText(streamOutput: string): string {
+  if (!streamOutput || typeof streamOutput !== "string") return "";
+  const lines = streamOutput.split("\n");
+  let accumulated = "";
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("0:")) {
+      try {
+        const jsonStr = trimmed.slice(2);
+        const textChunk = JSON.parse(jsonStr);
+        if (typeof textChunk === "string") {
+          accumulated += textChunk;
+        }
+      } catch {
+        accumulated += trimmed.slice(2).replace(/^"(.*)"$/, "$1");
+      }
+    }
+  }
+  return accumulated.trim();
 }
 
 export class CoachWattsApi {
@@ -183,14 +249,14 @@ export class CoachWattsApi {
     });
     const roomId = roomRes.roomId;
 
-    // 2. Post user message to chat room (handles SSE stream response gracefully)
+    // 2. Post user message to chat room (handles stream response)
     const baseUrl = getBaseUrl();
     const authHeaders = await getAuthHeader();
     const postRes = await fetch(`${baseUrl}/api/chat/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
+        Accept: "application/json, text/plain, */*",
         ...authHeaders,
       },
       body: JSON.stringify({
@@ -211,37 +277,90 @@ export class CoachWattsApi {
       throw new Error(errorMessage);
     }
 
-    // 3. Poll for completed AI response (up to 25 seconds)
+    // Attempt direct stream extraction if postRes returned streamed text
+    const streamedBodyText = await postRes.text().catch(() => "");
+    const parsedStreamText = parseAiStreamText(streamedBodyText);
+    if (parsedStreamText.length > 0) {
+      return parsedStreamText;
+    }
+
+    // 3. Fallback: Poll for completed AI response (up to 25 seconds)
+    let lastSeenText = "";
+    let stableCount = 0;
+
     const maxAttempts = 25;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const messages = await this.request<ChatMessage[]>(
-        `/api/chat/messages?roomId=${roomId}`,
-      );
+      const rawRes = await this.request<
+        | ChatMessage[]
+        | { messages?: ChatMessage[]; data?: ChatMessage[] }
+        | null
+      >(`/api/chat/messages?roomId=${roomId}`);
 
-      if (Array.isArray(messages)) {
+      const messages: ChatMessage[] = Array.isArray(rawRes)
+        ? rawRes
+        : Array.isArray(rawRes?.messages)
+          ? rawRes.messages
+          : Array.isArray(rawRes?.data)
+            ? rawRes.data
+            : [];
+
+      if (messages.length > 0) {
         const assistantMsg = [...messages]
           .reverse()
           .find((m) => m.role === "assistant");
 
         if (assistantMsg) {
-          const textContent =
-            assistantMsg.content && assistantMsg.content.trim().length > 0
-              ? assistantMsg.content
-              : assistantMsg.parts
-                  ?.filter((p) => p.type === "text" && p.text)
-                  .map((p) => p.text)
-                  .join("") || "";
+          let textContent = "";
 
           if (
-            textContent.trim().length > 0 &&
-            assistantMsg.metadata?.turnStatus === "COMPLETED"
+            typeof assistantMsg.content === "string" &&
+            assistantMsg.content.trim().length > 0
           ) {
-            return textContent.trim();
+            textContent = assistantMsg.content.trim();
+          } else if (Array.isArray(assistantMsg.parts)) {
+            textContent = assistantMsg.parts
+              .map((p) => {
+                if (typeof p === "string") return p;
+                if (p && typeof p.text === "string") return p.text;
+                return "";
+              })
+              .filter(Boolean)
+              .join("\n")
+              .trim();
+          }
+
+          if (textContent.length > 0) {
+            const turnStatus = assistantMsg.metadata?.turnStatus
+              ?.toString()
+              .toUpperCase();
+            const isCompleted =
+              turnStatus === "COMPLETED" ||
+              turnStatus === "DONE" ||
+              turnStatus === "FINISHED" ||
+              turnStatus === "SUCCESS";
+
+            if (isCompleted) {
+              return textContent;
+            }
+
+            if (textContent === lastSeenText) {
+              stableCount++;
+              if (stableCount >= 2) {
+                return textContent;
+              }
+            } else {
+              lastSeenText = textContent;
+              stableCount = 0;
+            }
           }
         }
       }
+    }
+
+    if (lastSeenText.length > 0) {
+      return lastSeenText;
     }
 
     throw new Error("Timeout waiting for Coach Watts AI response.");
@@ -257,5 +376,64 @@ export class CoachWattsApi {
         method: "POST",
       },
     );
+  }
+
+  public static async logMealByQuery(
+    query: string,
+    date?: string,
+    mealType?: string,
+  ): Promise<LogMealQueryResult> {
+    const targetDate = date || new Date().toISOString().split("T")[0];
+    return this.request<LogMealQueryResult>(
+      `/api/nutrition/${targetDate}/log`,
+      {
+        method: "POST",
+        body: { query, mealType },
+      },
+    );
+  }
+
+  public static async quickAddHydration(
+    volumeMl: number,
+    date?: string,
+  ): Promise<{ success: boolean; waterMl?: number }> {
+    const targetDate = date || new Date().toISOString().split("T")[0];
+    return this.request<{ success: boolean; waterMl?: number }>(
+      "/api/nutrition/hydration-quick-add",
+      {
+        method: "POST",
+        body: { date: targetDate, volumeMl },
+      },
+    );
+  }
+
+  public static async logNutritionItems(
+    date: string,
+    items: NutritionItem[],
+  ): Promise<NutritionDayTotals> {
+    return this.request<NutritionDayTotals>("/api/nutrition", {
+      method: "POST",
+      body: { date, items },
+    });
+  }
+
+  public static async getTodayNutrition(
+    date?: string,
+  ): Promise<NutritionDayTotals | null> {
+    const targetDate = date || new Date().toISOString().split("T")[0];
+    const res = await this.request<
+      | NutritionDayTotals
+      | NutritionDayTotals[]
+      | { nutrition?: NutritionDayTotals | NutritionDayTotals[] }
+      | null
+    >(`/api/nutrition?startDate=${targetDate}&endDate=${targetDate}`);
+
+    if (!res) return null;
+    if (Array.isArray(res)) return res[0] || null;
+    if (typeof res === "object" && "nutrition" in res && res.nutrition) {
+      if (Array.isArray(res.nutrition)) return res.nutrition[0] || null;
+      return res.nutrition as NutritionDayTotals;
+    }
+    return res as NutritionDayTotals;
   }
 }

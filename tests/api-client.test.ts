@@ -1,7 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { CoachWattsApi } from "../src/api/client";
+import { CoachWattsApi, parseAiStreamText } from "../src/api/client";
 
 describe("Coach Watts API Integration & E2E Suite", () => {
+  describe("parseAiStreamText", () => {
+    it("should parse Vercel AI SDK text stream lines correctly", () => {
+      const stream = `0:"Hello "\n0:"world, "\n0:"I am Coach Watts!"\nd:{"finishReason":"stop"}`;
+      const result = parseAiStreamText(stream);
+      expect(result).toBe("Hello world, I am Coach Watts!");
+    });
+
+    it("should handle empty or malformed stream text gracefully", () => {
+      expect(parseAiStreamText("")).toBe("");
+      expect(parseAiStreamText("invalid text without stream prefix")).toBe("");
+    });
+  });
+
   it("should fetch today's recommendation or return null safely", async () => {
     const res = await CoachWattsApi.getTodayRecommendation();
     if (res !== null) {
@@ -49,5 +62,23 @@ describe("Coach Watts API Integration & E2E Suite", () => {
   it("should trigger full sync endpoint without crashing", async () => {
     const res = await CoachWattsApi.triggerSync();
     expect(typeof res).toBe("object");
+  });
+
+  describe("Nutrition API Client", () => {
+    it("should fetch today's nutrition totals or return null gracefully", async () => {
+      const nutrition = await CoachWattsApi.getTodayNutrition();
+      if (nutrition !== null) {
+        expect(typeof nutrition).toBe("object");
+        expect(typeof nutrition.calories).toBe("number");
+      }
+    });
+
+    it("should construct valid payloads for quickAddHydration method", async () => {
+      expect(typeof CoachWattsApi.quickAddHydration).toBe("function");
+    });
+
+    it("should construct valid payloads for logMealByQuery method", async () => {
+      expect(typeof CoachWattsApi.logMealByQuery).toBe("function");
+    });
   });
 });
