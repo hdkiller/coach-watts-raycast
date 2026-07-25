@@ -53,16 +53,16 @@
       "name": "baseUrl",
       "type": "textfield",
       "required": false,
-      "title": "Server URL",
-      "description": "Base URL of Coach Watts server (e.g. http://localhost:3000 or https://coachwatts.com)",
-      "default": "http://localhost:3000"
+      "title": "Server Base URL",
+      "description": "Base URL of Coach Watts instance (default: https://coachwatts.com or your self-hosted URL)",
+      "default": "https://coachwatts.com"
     },
     {
       "name": "apiKey",
       "type": "password",
       "required": false,
-      "title": "API Key / Bearer Token",
-      "description": "API Key or Bearer Token generated in Coach Watts Settings"
+      "title": "API Key (Optional)",
+      "description": "Optional API Key. If left blank, Raycast will authenticate via OAuth 2.0 with PKCE."
     }
   ],
   "dependencies": {

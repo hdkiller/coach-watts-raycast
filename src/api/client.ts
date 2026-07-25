@@ -1,10 +1,5 @@
-import { getPreferenceValues } from "@raycast/api";
-import fetch, { HeadersInit } from "node-fetch";
-
-export interface Preferences {
-  baseUrl?: string;
-  apiKey?: string;
-}
+import fetch from "node-fetch";
+import { getAuthHeader, getBaseUrl } from "./oauth";
 
 export interface RecommendationResponse {
   id?: string;
@@ -72,35 +67,17 @@ export interface ChatResponse {
 }
 
 export class CoachWattsApi {
-  private static getHeaders(): HeadersInit {
-    const prefs = getPreferenceValues<Preferences>();
+  private static async request<T>(endpoint: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+
+    const authHeaders = await getAuthHeader();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
+      ...authHeaders,
     };
 
-    if (prefs.apiKey && prefs.apiKey.trim().length > 0) {
-      headers["X-API-Key"] = prefs.apiKey.trim();
-      headers["Authorization"] = `Bearer ${prefs.apiKey.trim()}`;
-    }
-
-    return headers;
-  }
-
-  private static getBaseUrl(): string {
-    const prefs = getPreferenceValues<Preferences>();
-    let url = prefs.baseUrl?.trim() || "http://localhost:3000";
-    if (url.endsWith("/")) {
-      url = url.slice(0, -1);
-    }
-    return url;
-  }
-
-  private static async request<T>(endpoint: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
-    const baseUrl = this.getBaseUrl();
-    const url = `${baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
-
-    const headers = this.getHeaders();
     const response = await fetch(url, {
       method: options.method || "GET",
       headers,
@@ -114,6 +91,7 @@ export class CoachWattsApi {
         const parsed = JSON.parse(errorText);
         if (parsed.message) errorMessage = parsed.message;
         if (parsed.statusMessage) errorMessage = parsed.statusMessage;
+        if (parsed.error_description) errorMessage = parsed.error_description;
       } catch {
         if (errorText) errorMessage = errorText;
       }

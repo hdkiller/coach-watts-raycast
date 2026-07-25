@@ -8,9 +8,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 type ExtensionPreferences = {
-  /** Server URL - Base URL of Coach Watts server (e.g. http://localhost:3000 or https://coachwatts.com) */
+  /** Server Base URL - Base URL of Coach Watts instance (default: https://coachwatts.com or your self-hosted URL) */
   "baseUrl": string,
-  /** API Key / Bearer Token - API Key or Bearer Token generated in Coach Watts Settings */
+  /** API Key (Optional) - Optional API Key. If left blank, Raycast will authenticate via OAuth 2.0 with PKCE. */
   "apiKey"?: string
 }
 
