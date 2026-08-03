@@ -1,5 +1,12 @@
 name: CI & E2E Validation
 
+# Jobs run on the watt-mind org's self-hosted runner pool (labels:
+# self-hosted, e2e -- runners watt-mind-shadow-1 / watt-mind-shadow-2), not
+# GitHub-hosted ubuntu-latest: the org's GitHub-hosted Actions minutes are
+# exhausted, so every ubuntu-latest job now fails at runner assignment
+# (runner_id 0, no steps, no logs) regardless of the code under test.
+# Note: `runs-on` matches runner *labels*, not runner names.
+
 on:
   push:
     branches: [ master, main ]
@@ -9,7 +16,7 @@ on:
 jobs:
   test:
     name: Typecheck, Build & E2E Integration Test
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, e2e]
 
     steps:
       - name: Checkout code
